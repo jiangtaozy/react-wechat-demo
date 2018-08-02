@@ -14,10 +14,12 @@ export function configWechat(config) {
       let jssdk = getState().jssdk
       let jssdkItem = jssdk[href]
       return configJssdk(jssdkItem).then(() => {
+        jssdkItem.shareUrl = config.url // 自定义分享链接
         return configShare(jssdkItem)
       })
     }).catch(error => {
-      console.log('configJSSDK error: ' + JSON.stringify(error)) // 查看请求错误
+      console.error('configJSSDK error.message: ' + JSON.stringify(error.message))
+      console.error('configJSSDK error.response: ' + JSON.stringify(error.response))
     });
   }
 }
@@ -30,7 +32,7 @@ export function configPay() {
       let jssdkItem = jssdk[href]
       return configJssdk(jssdkItem)
     }).catch(error => {
-      console.log('configPay error: ' + JSON.stringify(error))
+      console.error('configPay error: ' + JSON.stringify(error))
     });
   }
 }
@@ -50,8 +52,8 @@ function getJssdkIfNeeded(dispatch, getState, config, href) {
         }
         return dispatch(updateJSSDK(href, jssdk))
       } else {
+        console.error('response error: ' + JSON.stringify(response))
         return Promise.reject(response)
-        //console.log('response error: ' + JSON.stringify(response))
       }
     })
   } else {
@@ -68,7 +70,6 @@ function shouldGetJSSDK(href, state) {
     isNaN(jssdkItem.create_at) ||
     isNaN(jssdkItem.expires_in) ||
     (new Date().getTime()) > (parseInt(jssdkItem.create_at, 10) + parseInt(jssdkItem.expires_in, 10) * 1000)) {
-    //console.log('refresh jssdk')
     return true
   } else {
     return false
@@ -84,7 +85,6 @@ function updateJSSDK(href, jssdk) {
 }
 
 function configJssdk(jssdk) {
-  //console.log('configJssdk jssdk: ' + JSON.stringify(jssdk))
   return new Promise((resolve, reject) => {
     let wx = window.wx
     let config = {
@@ -111,41 +111,40 @@ function configJssdk(jssdk) {
 }
 
 function configShare(jssdk) {
-  console.log('configShare jssdk: ' + JSON.stringify(jssdk))
   let wx = window.wx
   wx.ready(() => {
     // 分享到朋友圈
     wx.onMenuShareTimeline({
       title: jssdk.title,
-      link: jssdk.idUrl,
+      link: jssdk.shareUrl || jssdk.idUrl,
       imgUrl: jssdk.image,
     })
     // 分享给朋友
     wx.onMenuShareAppMessage({
       title: jssdk.title,
       desc: jssdk.description,
-      link: jssdk.idUrl,
+      link: jssdk.shareUrl || jssdk.idUrl,
       imgUrl: jssdk.image,
     })
     // 分享到QQ
     wx.onMenuShareQQ({
       title: jssdk.title,
       desc: jssdk.description,
-      link: jssdk.idUrl,
+      link: jssdk.shareUrl || jssdk.idUrl,
       imgUrl: jssdk.image,
     })
     // 分享到腾讯微博
     wx.onMenuShareWeibo({
       title: jssdk.title,
       desc: jssdk.description,
-      link: jssdk.idUrl,
+      link: jssdk.shareUrl || jssdk.idUrl,
       imgUrl: jssdk.image,
     })
     // 分享到QQ控件
     wx.onMenuShareQZone({
       title: jssdk.title,
       desc: jssdk.description,
-      link: jssdk.idUrl,
+      link: jssdk.shareUrl || jssdk.idUrl,
       imgUrl: jssdk.image,
     })
   })
